@@ -27,7 +27,7 @@ import java.util.Comparator;
 import java.util.Deque;
 import java.util.List;
 
-public class InputFileDequeue extends ForwardingDeque<InputFile> {
+public class InputFileDequeue extends ForwardingDeque<FileReadable> {
   private static final Logger log = LoggerFactory.getLogger(InputFileDequeue.class);
   private final AbstractSourceConnectorConfig config;
 
@@ -35,7 +35,7 @@ public class InputFileDequeue extends ForwardingDeque<InputFile> {
     this.config = config;
   }
 
-  Deque<InputFile> files;
+  Deque<FileReadable> files;
 
   static File processingFile(String processingFileExtension, File input) {
     String fileName = input.getName() + processingFileExtension;
@@ -43,7 +43,7 @@ public class InputFileDequeue extends ForwardingDeque<InputFile> {
   }
 
   @Override
-  protected Deque<InputFile> delegate() {
+  protected Deque<FileReadable> delegate() {
     if (null != files && !files.isEmpty()) {
       return files;
     }
@@ -58,7 +58,7 @@ public class InputFileDequeue extends ForwardingDeque<InputFile> {
     List<File> files = new ArrayList<>(input.length);
     files.addAll(Arrays.asList(input));
 
-    Deque<InputFile> result = new ArrayDeque<>(files.size());
+    Deque<FileReadable> result = new ArrayDeque<>(files.size());
 
     for (File file : files) {
       File processingFile = processingFile(this.config.processingFileExtension, file);

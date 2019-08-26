@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 public class SpoolDirCsvSourceTask extends SpoolDirSourceTask<SpoolDirCsvSourceConnectorConfig> {
+  
   private static final Logger log = LoggerFactory.getLogger(SpoolDirCsvSourceTask.class);
   String[] fieldNames;
   private ICSVParser csvParser;
@@ -144,7 +145,7 @@ public class SpoolDirCsvSourceTask extends SpoolDirSourceTask<SpoolDirCsvSourceC
       }
 
       if (log.isInfoEnabled() && this.csvReader.getLinesRead() % ((long) this.config.batchSize * 20) == 0) {
-        log.info("Processed {} lines of {}", this.csvReader.getLinesRead(), this.inputFile);
+        log.info("Processed {} lines of {}", this.csvReader.getLinesRead(), this.inputFileObject);
       }
 
       addRecord(

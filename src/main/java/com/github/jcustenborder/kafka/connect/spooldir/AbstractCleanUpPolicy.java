@@ -19,11 +19,10 @@ import com.google.common.io.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 
-abstract class AbstractCleanUpPolicy implements Closeable {
+class AbstractCleanUpPolicy implements AbstractCleanable {
   private static final Logger log = LoggerFactory.getLogger(AbstractCleanUpPolicy.class);
   protected final File inputFile;
   protected final File errorPath;
@@ -35,19 +34,28 @@ abstract class AbstractCleanUpPolicy implements Closeable {
     this.errorPath = errorPath;
     this.finishedPath = finishedPath;
   }
-
-
-  public static AbstractCleanUpPolicy create(AbstractSourceConnectorConfig config, InputFile inputFile) throws IOException {
+  
+  // TODO : check if this needed.
+  public AbstractCleanUpPolicy() {
+    this.inputFile = null;
+    this.errorPath = null;
+    this.finishedPath = null;
+  }
+  
+  @Override
+  public AbstractCleanUpPolicy create(AbstractSourceConnectorConfig config, 
+      FileReadable inputReadableFile) throws IOException {
     final AbstractCleanUpPolicy result;
+    InputFile inputFile = (InputFile) inputReadableFile;
     switch (config.cleanupPolicy) {
       case MOVE:
-        result = new Move(inputFile.inputFile, config.errorPath, config.finishedPath);
+        result = new Move(inputFile.getInputFile(), config.errorPath, config.finishedPath);
         break;
       case DELETE:
-        result = new Delete(inputFile.inputFile, config.errorPath, config.finishedPath);
+        result = new Delete(inputFile.getInputFile(), config.errorPath, config.finishedPath);
         break;
       case NONE:
-        result = new None(inputFile.inputFile, config.errorPath, config.finishedPath);
+        result = new None(inputFile.getInputFile(), config.errorPath, config.finishedPath);
         break;
       default:
         throw new UnsupportedOperationException(
@@ -82,9 +90,7 @@ abstract class AbstractCleanUpPolicy implements Closeable {
 
   }
 
-  /**
-   * Method is used to handle file cleanup when processing the file has errored.
-   */
+  @Override
   public void error() {
     log.error(
         "Error during processing, moving {} to {}.",
@@ -97,7 +103,8 @@ abstract class AbstractCleanUpPolicy implements Closeable {
   /**
    * Method is used to handle file cleanup when processing the file was successful.
    */
-  public abstract void success() throws IOException;
+  @Override
+  public void success() throws IOException {};
 
   static class Move extends AbstractCleanUpPolicy {
     protected Move(File inputFile, File errorPath, File finishedPath) {

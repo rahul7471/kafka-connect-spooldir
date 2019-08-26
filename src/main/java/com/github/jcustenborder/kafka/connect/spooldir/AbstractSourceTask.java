@@ -16,7 +16,6 @@
 package com.github.jcustenborder.kafka.connect.spooldir;
 
 import com.github.jcustenborder.kafka.connect.utils.VersionUtil;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableMap;
 import org.apache.kafka.connect.data.SchemaAndValue;
@@ -26,8 +25,6 @@ import org.apache.kafka.connect.source.SourceTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -40,64 +37,14 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
   protected Map<String, ?> sourcePartition;
   protected CONF config;
   private final Stopwatch processingTime = Stopwatch.createUnstarted();
-  protected InputFile inputFile;
+  protected FileReadable inputFileObject;
   protected long inputFileModifiedTime;
 
   private boolean hasRecords = false;
   protected Map<String, String> metadata;
-
-  private static void checkDirectory(String key, File directoryPath) {
-    if (log.isInfoEnabled()) {
-      log.info("Checking if directory {} '{}' exists.",
-          key,
-          directoryPath
-      );
-    }
-
-    String errorMessage = String.format(
-        "Directory for '%s' '%s' does not exist ",
-        key,
-        directoryPath
-    );
-
-    if (!directoryPath.isDirectory()) {
-      throw new ConnectException(
-          errorMessage,
-          new FileNotFoundException(directoryPath.getAbsolutePath())
-      );
-    }
-
-    if (log.isInfoEnabled()) {
-      log.info("Checking to ensure {} '{}' is writable ", key, directoryPath);
-    }
-
-    errorMessage = String.format(
-        "Directory for '%s' '%s' it not writable.",
-        key,
-        directoryPath
-    );
-
-    File temporaryFile = null;
-
-    try {
-      temporaryFile = File.createTempFile(".permission", ".testing", directoryPath);
-    } catch (IOException ex) {
-      throw new ConnectException(
-          errorMessage,
-          ex
-      );
-    } finally {
-      try {
-        if (null != temporaryFile && temporaryFile.exists()) {
-          Preconditions.checkState(temporaryFile.delete(), "Unable to delete temp file in %s", directoryPath);
-        }
-      } catch (Exception ex) {
-        if (log.isWarnEnabled()) {
-          log.warn("Exception thrown while deleting {}.", temporaryFile, ex);
-        }
-      }
-    }
-  }
+  
+  private CheckDirectoryPermission checkPermission;
+  private AbstractCleanable abstractCleanable;
 
   protected abstract CONF config(Map<String, ?> settings);
 
@@ -110,12 +57,16 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
   @Override
   public void start(Map<String, String> settings) {
     this.config = config(settings);
-
-    checkDirectory(AbstractSourceConnectorConfig.INPUT_PATH_CONFIG, this.config.inputPath);
-    checkDirectory(AbstractSourceConnectorConfig.ERROR_PATH_CONFIG, this.config.errorPath);
-
+    
+    // Initialize with CheckDirectoryPermission and AbstractCleanable object.
+    checkPermission = new DirectoryPermission();
+    abstractCleanable = new AbstractCleanUpPolicy();
+    
+    checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.INPUT_PATH_CONFIG, this.config.inputPath.toString());
+    checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.ERROR_PATH_CONFIG, this.config.errorPath.toString());
+    
     if (AbstractSourceConnectorConfig.CleanupPolicy.MOVE == this.config.cleanupPolicy) {
-      checkDirectory(AbstractSourceConnectorConfig.FINISHED_PATH_CONFIG, this.config.finishedPath);
+      checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.FINISHED_PATH_CONFIG, this.config.finishedPath.toString());
     }
 
     this.inputFileDequeue = new InputFileDequeue(this.config);
@@ -125,14 +76,14 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
   public void stop() {
     log.info("Stopping task.");
     try {
-      if (null != this.inputFile) {
-        this.inputFile.close();
+      if (null != this.inputFileObject) {
+        this.inputFileObject.close();
       }
       if (null != this.cleanUpPolicy) {
         this.cleanUpPolicy.close();
       }
     } catch (IOException ex) {
-      log.error("Exception thrown while closing {}", this.inputFile);
+      log.error("Exception thrown while closing {}", this.inputFileObject);
     }
   }
 
@@ -172,21 +123,21 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
     );
   }
 
-  AbstractCleanUpPolicy cleanUpPolicy;
+  AbstractCleanable cleanUpPolicy;
 
   public List<SourceRecord> read() {
     try {
       if (!hasRecords) {
 
-        if (null != this.inputFile) {
+        if (null != this.inputFileObject) {
           recordProcessingTime();
-          this.inputFile.close();
+          this.inputFileObject.close();
           this.cleanUpPolicy.success();
-          this.inputFile = null;
+          this.inputFileObject = null;
         }
 
         log.trace("read() - polling for next file.");
-        InputFile nextFile = this.inputFileDequeue.poll();
+        FileReadable nextFile = this.inputFileDequeue.poll();
 
         log.trace("read() - nextFile = '{}'", nextFile);
         if (null == nextFile) {
@@ -195,15 +146,15 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
         }
 
         this.metadata = ImmutableMap.of();
-        this.inputFile = nextFile;
-        this.inputFileModifiedTime = this.inputFile.inputFile.lastModified();
+        this.inputFileObject = nextFile;
+        this.inputFileModifiedTime = this.inputFileObject.lastModified();
 
         try {
-          this.inputFile.openStream();
+          this.inputFileObject.openStream();
           this.sourcePartition = ImmutableMap.of(
-              "fileName", this.inputFile.inputFile.getName()
+              "fileName", this.inputFileObject.getName()
           );
-          log.info("Opening {}", this.inputFile);
+          log.info("Opening {}", this.inputFileObject);
           Long lastOffset = null;
           log.trace("looking up offset for {}", this.sourcePartition);
           Map<String, Object> offset = this.context.offsetStorageReader().offset(this.sourcePartition);
@@ -212,10 +163,11 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
             lastOffset = number.longValue();
           }
 
-          this.cleanUpPolicy = AbstractCleanUpPolicy.create(this.config, this.inputFile);
+          this.cleanUpPolicy = this.abstractCleanable.create(this.config, this.inputFileObject);
+          
           this.recordCount = 0;
           log.trace("read() - calling configure()");
-          configure(this.inputFile.inputStream, this.metadata, lastOffset);
+          configure(this.inputFileObject.getInputStream(), this.metadata, lastOffset);
         } catch (Exception ex) {
           throw new ConnectException(ex);
         }
@@ -226,7 +178,7 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
       this.hasRecords = !records.isEmpty();
       return records;
     } catch (Exception ex) {
-      log.error("Exception encountered processing line {} of {}.", recordOffset(), this.inputFile, ex);
+      log.error("Exception encountered processing line {} of {}.", recordOffset(), this.inputFileObject, ex);
       this.cleanUpPolicy.error();
       try {
         this.cleanUpPolicy.close();
@@ -269,6 +221,5 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
         timestamp
     );
   }
-
 
 }

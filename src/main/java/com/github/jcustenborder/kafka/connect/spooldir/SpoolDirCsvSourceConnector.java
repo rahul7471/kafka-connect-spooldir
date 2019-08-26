@@ -34,6 +34,7 @@ import java.util.Map;
     "   kafka-run-class com.github.jcustenborder.kafka.connect.spooldir.SchemaGenerator -t csv -f src/test/resources/com/github/jcustenborder/kafka/connect/spooldir/csv/FieldsMatch.data -c config/CSVExample.properties -i id\n" +
     "")
 public class SpoolDirCsvSourceConnector extends SpoolDirSourceConnector<SpoolDirCsvSourceConnectorConfig> {
+  
   @Override
   protected SpoolDirCsvSourceConnectorConfig config(Map<String, String> settings) {
     return new SpoolDirCsvSourceConnectorConfig(false, settings);

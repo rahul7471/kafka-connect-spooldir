@@ -22,17 +22,16 @@ import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 
-class InputFile implements Closeable {
+class InputFile implements FileReadable {
   private static final Logger log = LoggerFactory.getLogger(InputFile.class);
-  public final File inputFile;
-  public final File processingFlag;
+  private final File inputFile;
+  private final File processingFlag;
 
   InputFile(File inputFile, File processingFlag) {
     this.inputFile = inputFile;
@@ -47,7 +46,7 @@ class InputFile implements Closeable {
       "z", CompressorStreamFactory.Z
   );
 
-  public InputStream inputStream;
+  private InputStream inputStream;
 
   public InputStream openStream() throws IOException {
     if (null != this.inputStream) {
@@ -97,4 +96,31 @@ class InputFile implements Closeable {
       }
     }
   }
+  
+  @Override
+  public long lastModified() throws IOException {
+    return this.inputFile.lastModified();
+  }
+
+  @Override
+  public String getName() throws IOException {
+    return this.inputFile.getName();
+  }
+
+  public File getInputFile() {
+    return inputFile;
+  }
+
+  public File getProcessingFlag() {
+    return processingFlag;
+  }
+
+  public InputStream getInputStream() {
+    return inputStream;
+  }
+
+  public void setInputStream(InputStream inputStream) {
+    this.inputStream = inputStream;
+  }
+  
 }
