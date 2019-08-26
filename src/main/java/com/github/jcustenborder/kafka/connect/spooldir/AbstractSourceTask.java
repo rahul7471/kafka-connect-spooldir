@@ -43,8 +43,8 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
   private boolean hasRecords = false;
   protected Map<String, String> metadata;
   
-  private CheckDirectoryPermission checkPermission;
-  private AbstractCleanable abstractCleanable;
+  protected CheckDirectoryPermission checkPermission;
+  protected AbstractCleanable abstractCleanable;
 
   protected abstract CONF config(Map<String, ?> settings);
 
