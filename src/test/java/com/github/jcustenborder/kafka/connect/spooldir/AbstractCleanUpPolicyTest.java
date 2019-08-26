@@ -12,7 +12,7 @@ import java.util.Objects;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public abstract class AbstractCleanUpPolicyTest<T extends AbstractCleanUpPolicy> {
+public abstract class AbstractCleanUpPolicyTest<T extends CleanUpPolicy> {
 
   File inputFile;
   File finishedPath;

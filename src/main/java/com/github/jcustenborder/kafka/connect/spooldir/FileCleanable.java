@@ -19,7 +19,7 @@ package com.github.jcustenborder.kafka.connect.spooldir;
 import java.io.Closeable;
 import java.io.IOException;
 
-public interface AbstractCleanable extends Closeable {
+public interface FileCleanable extends Closeable {
   
   /**
    * This method create a policy and further call the method required to finish the task
@@ -28,7 +28,7 @@ public interface AbstractCleanable extends Closeable {
    * @return
    * @throws IOException
    */
-  AbstractCleanable create(AbstractSourceConnectorConfig config, FileReadable inputFile) throws IOException;
+  FileCleanable create(AbstractSourceConnectorConfig config, FileReadable inputFile) throws IOException;
  
   /**
    * This method used to perform action for successful execution of policy

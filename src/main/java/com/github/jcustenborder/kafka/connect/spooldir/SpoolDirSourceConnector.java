@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public abstract class SpoolDirSourceConnector<CONF extends SpoolDirSourceConnectorConfig> extends SourceConnector {
-  
   private static Logger log = LoggerFactory.getLogger(SpoolDirSourceConnector.class);
   protected Map<String, String> settings;
   private CONF config;
