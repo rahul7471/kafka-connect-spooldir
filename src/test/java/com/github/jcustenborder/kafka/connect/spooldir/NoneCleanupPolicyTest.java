@@ -7,10 +7,10 @@ import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class NoneCleanupPolicyTest extends AbstractCleanUpPolicyTest<AbstractCleanUpPolicy.None> {
+public class NoneCleanupPolicyTest extends AbstractCleanUpPolicyTest<CleanUpPolicy.None> {
   @Override
-  protected AbstractCleanUpPolicy.None create(File inputFile, File errorPath, File finishedPath) {
-    return new AbstractCleanUpPolicy.None(inputFile, errorPath, finishedPath);
+  protected CleanUpPolicy.None create(File inputFile, File errorPath, File finishedPath) {
+    return new CleanUpPolicy.None(inputFile, errorPath, finishedPath);
   }
 
   @Test

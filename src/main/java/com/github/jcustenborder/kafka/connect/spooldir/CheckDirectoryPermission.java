@@ -22,11 +22,11 @@ package com.github.jcustenborder.kafka.connect.spooldir;
 public interface CheckDirectoryPermission {
   
   /**
-   * "The directory to read files that will be processed.";
    * To check if directory provided exists and is writable by the user 
    * running kafka Connect.
-   * @param key : 
-   * @param path : it is the Path to the directory to be checked.
+   * @param key : vale of file path key from configuration.
+   *              for example - input.path, finished.path, error.path etc
+   * @param path : It is the Path to the directory to be checked.
    */
   void checkIfDirectoryIsAccessible(String key, String path);
 

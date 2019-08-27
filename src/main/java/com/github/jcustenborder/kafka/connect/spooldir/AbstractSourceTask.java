@@ -44,7 +44,7 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
   protected Map<String, String> metadata;
   
   protected CheckDirectoryPermission checkPermission;
-  protected AbstractCleanable abstractCleanable;
+  protected FileCleanable fileCleanable;
 
   protected abstract CONF config(Map<String, ?> settings);
 
@@ -58,9 +58,9 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
   public void start(Map<String, String> settings) {
     this.config = config(settings);
     
-    // Initialize with CheckDirectoryPermission and AbstractCleanable object.
+    // Initialize CheckDirectoryPermission and AbstractCleanable object.
     checkPermission = new DirectoryPermission();
-    abstractCleanable = new AbstractCleanUpPolicy();
+    fileCleanable = new CleanUpPolicy();
     
     checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.INPUT_PATH_CONFIG, this.config.inputPath.toString());
     checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.ERROR_PATH_CONFIG, this.config.errorPath.toString());
@@ -123,7 +123,7 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
     );
   }
 
-  AbstractCleanable cleanUpPolicy;
+  FileCleanable cleanUpPolicy;
 
   public List<SourceRecord> read() {
     try {
@@ -163,7 +163,7 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
             lastOffset = number.longValue();
           }
 
-          this.cleanUpPolicy = this.abstractCleanable.create(this.config, this.inputFileObject);
+          this.cleanUpPolicy = this.fileCleanable.create(this.config, this.inputFileObject);
           
           this.recordCount = 0;
           log.trace("read() - calling configure()");

@@ -8,10 +8,10 @@ import java.io.IOException;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class MoveCleanupPolicyTest extends AbstractCleanUpPolicyTest<AbstractCleanUpPolicy.Move> {
+public class MoveCleanupPolicyTest extends AbstractCleanUpPolicyTest<CleanUpPolicy.Move> {
   @Override
-  protected AbstractCleanUpPolicy.Move create(File inputFile, File errorPath, File finishedPath) {
-    return new AbstractCleanUpPolicy.Move(inputFile, errorPath, finishedPath);
+  protected CleanUpPolicy.Move create(File inputFile, File errorPath, File finishedPath) {
+    return new CleanUpPolicy.Move(inputFile, errorPath, finishedPath);
   }
 
   @Test

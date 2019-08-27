@@ -22,30 +22,30 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 
-class AbstractCleanUpPolicy implements AbstractCleanable {
-  private static final Logger log = LoggerFactory.getLogger(AbstractCleanUpPolicy.class);
+class CleanUpPolicy implements FileCleanable {
+  private static final Logger log = LoggerFactory.getLogger(CleanUpPolicy.class);
   protected final File inputFile;
   protected final File errorPath;
   protected final File finishedPath;
 
 
-  protected AbstractCleanUpPolicy(File inputFile, File errorPath, File finishedPath) {
+  protected CleanUpPolicy(File inputFile, File errorPath, File finishedPath) {
     this.inputFile = inputFile;
     this.errorPath = errorPath;
     this.finishedPath = finishedPath;
   }
   
   // TODO : check if this needed.
-  public AbstractCleanUpPolicy() {
+  public CleanUpPolicy() {
     this.inputFile = null;
     this.errorPath = null;
     this.finishedPath = null;
   }
   
   @Override
-  public AbstractCleanUpPolicy create(AbstractSourceConnectorConfig config, 
+  public CleanUpPolicy create(AbstractSourceConnectorConfig config, 
       FileReadable inputReadableFile) throws IOException {
-    final AbstractCleanUpPolicy result;
+    final CleanUpPolicy result;
     InputFile inputFile = (InputFile) inputReadableFile;
     switch (config.cleanupPolicy) {
       case MOVE:
@@ -106,7 +106,7 @@ class AbstractCleanUpPolicy implements AbstractCleanable {
   @Override
   public void success() throws IOException {};
 
-  static class Move extends AbstractCleanUpPolicy {
+  static class Move extends CleanUpPolicy {
     protected Move(File inputFile, File errorPath, File finishedPath) {
       super(inputFile, errorPath, finishedPath);
     }
@@ -117,7 +117,7 @@ class AbstractCleanUpPolicy implements AbstractCleanable {
     }
   }
 
-  static class Delete extends AbstractCleanUpPolicy {
+  static class Delete extends CleanUpPolicy {
     protected Delete(File inputFile, File errorPath, File finishedPath) {
       super(inputFile, errorPath, finishedPath);
     }
@@ -128,7 +128,7 @@ class AbstractCleanUpPolicy implements AbstractCleanable {
     }
   }
 
-  static class None extends AbstractCleanUpPolicy {
+  static class None extends CleanUpPolicy {
     protected None(File inputFile, File errorPath, File finishedPath) {
       super(inputFile, errorPath, finishedPath);
     }
