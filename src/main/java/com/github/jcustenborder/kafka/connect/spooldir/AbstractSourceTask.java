@@ -59,14 +59,16 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
     this.config = config(settings);
     
     // Initialize CheckDirectoryPermission and AbstractCleanable object.
-    checkPermission = new DirectoryPermission();
-    fileCleanable = new CleanUpPolicy();
-    
-    checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.INPUT_PATH_CONFIG, this.config.inputPath.toString());
-    checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.ERROR_PATH_CONFIG, this.config.errorPath.toString());
-    
-    if (AbstractSourceConnectorConfig.CleanupPolicy.MOVE == this.config.cleanupPolicy) {
-      checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.FINISHED_PATH_CONFIG, this.config.finishedPath.toString());
+    if (config.getBoolean(AbstractSourceConnectorConfig.IS_FOR_SPOOL_DIR)) {
+      checkPermission = new DirectoryPermission();
+      fileCleanable = new CleanUpPolicy();
+
+      checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.INPUT_PATH_CONFIG, this.config.inputPath.toString());
+      checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.ERROR_PATH_CONFIG, this.config.errorPath.toString());
+
+      if (AbstractSourceConnectorConfig.CleanupPolicy.MOVE == this.config.cleanupPolicy) {
+        checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.FINISHED_PATH_CONFIG, this.config.finishedPath.toString());
+      }
     }
 
     this.inputFileDequeue = new InputFileDequeue(this.config);
@@ -92,7 +94,7 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
     return VersionUtil.version(this.getClass());
   }
 
-  InputFileDequeue inputFileDequeue;
+  protected InputFileDequeue inputFileDequeue;
   int emptyCount = 0;
   long recordCount;
 

@@ -36,6 +36,7 @@ public abstract class AbstractSourceConnectorConfig extends AbstractConfig {
   public static final String HALT_ON_ERROR_CONF = "halt.on.error";
   public static final String FILE_MINIMUM_AGE_MS_CONF = "file.minimum.age.ms";
   public static final String PROCESSING_FILE_EXTENSION_CONF = "processing.file.extension";
+  public static final String IS_FOR_SPOOL_DIR = "for.spooldir";
   //RecordProcessorConfig
   public static final String BATCH_SIZE_CONF = "batch.size";
   public static final String PROCESSING_FILE_EXTENSION_DEFAULT = ".PROCESSING";
@@ -82,6 +83,7 @@ public abstract class AbstractSourceConnectorConfig extends AbstractConfig {
   public final File finishedPath;
   public final File errorPath;
   public final boolean haltOnError;
+  public final boolean forSpooldir;
   public final long minimumFileAgeMS;
   public final int batchSize;
   public final String topic;
@@ -102,6 +104,7 @@ public abstract class AbstractSourceConnectorConfig extends AbstractConfig {
       this.finishedPath = null;
     }
 
+    this.forSpooldir = this.getBoolean(IS_FOR_SPOOL_DIR);
     this.errorPath = ConfigUtils.getAbsoluteFile(this, ERROR_PATH_CONFIG);
     this.haltOnError = this.getBoolean(HALT_ON_ERROR_CONF);
     this.minimumFileAgeMS = this.getLong(FILE_MINIMUM_AGE_MS_CONF);
@@ -211,7 +214,12 @@ public abstract class AbstractSourceConnectorConfig extends AbstractConfig {
                 .defaultValue(TimestampMode.PROCESS_TIME.toString())
                 .validator(ValidEnum.of(TimestampMode.class))
                 .build()
-        );
+        ).define(
+             ConfigKeyBuilder.of(IS_FOR_SPOOL_DIR, ConfigDef.Type.BOOLEAN)
+             .importance(ConfigDef.Importance.HIGH)
+             .defaultValue(true)
+             .build()
+            );
   }
 
   public enum TimestampMode {
