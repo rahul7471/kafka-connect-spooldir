@@ -216,7 +216,7 @@ public abstract class AbstractSourceConnectorConfig extends AbstractConfig {
                 .build()
         ).define(
              ConfigKeyBuilder.of(IS_FOR_SPOOL_DIR, ConfigDef.Type.BOOLEAN)
-             .importance(ConfigDef.Importance.HIGH)
+             .importance(ConfigDef.Importance.LOW)
              .defaultValue(true)
              .build()
             );
