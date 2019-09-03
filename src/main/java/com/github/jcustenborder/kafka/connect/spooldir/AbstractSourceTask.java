@@ -39,6 +39,7 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
   private final Stopwatch processingTime = Stopwatch.createUnstarted();
   protected FileReadable inputFileObject;
   protected long inputFileModifiedTime;
+  private long recordsCount;
 
   private boolean hasRecords = false;
   protected Map<String, String> metadata;
@@ -57,11 +58,12 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
   @Override
   public void start(Map<String, String> settings) {
     this.config = config(settings);
+    this.recordCount = 0;
     
     // Initialize CheckDirectoryPermission and AbstractCleanable object.
     if (config.getBoolean(AbstractSourceConnectorConfig.IS_FOR_SPOOL_DIR)) {
       checkPermission = new DirectoryPermission();
-      fileCleanable = new CleanUpPolicy();
+      fileCleanable = new CleanUpPolicy(this.config.inputPath, this.config.errorPath, this.config.finishedPath);
 
       checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.INPUT_PATH_CONFIG, this.config.inputPath.toString());
       checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.ERROR_PATH_CONFIG, this.config.errorPath.toString());
@@ -113,7 +115,7 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
     }
     emptyCount = 0;
     log.trace("read() returning {} result(s)", results.size());
-
+    this.recordCount = this.recordsCount + results.size();
     return results;
   }
 
