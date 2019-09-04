@@ -39,6 +39,7 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
   private final Stopwatch processingTime = Stopwatch.createUnstarted();
   protected FileReadable inputFileObject;
   protected long inputFileModifiedTime;
+  private long recordsCount;
 
   private boolean hasRecords = false;
   protected Map<String, String> metadata;
@@ -57,16 +58,19 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
   @Override
   public void start(Map<String, String> settings) {
     this.config = config(settings);
+    this.recordCount = 0;
     
     // Initialize CheckDirectoryPermission and AbstractCleanable object.
-    checkPermission = new DirectoryPermission();
-    fileCleanable = new CleanUpPolicy();
-    
-    checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.INPUT_PATH_CONFIG, this.config.inputPath.toString());
-    checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.ERROR_PATH_CONFIG, this.config.errorPath.toString());
-    
-    if (AbstractSourceConnectorConfig.CleanupPolicy.MOVE == this.config.cleanupPolicy) {
-      checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.FINISHED_PATH_CONFIG, this.config.finishedPath.toString());
+    if (config.getBoolean(AbstractSourceConnectorConfig.IS_FOR_SPOOL_DIR)) {
+      checkPermission = new DirectoryPermission();
+      fileCleanable = new CleanUpPolicy(this.config.inputPath, this.config.errorPath, this.config.finishedPath);
+
+      checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.INPUT_PATH_CONFIG, this.config.inputPath.toString());
+      checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.ERROR_PATH_CONFIG, this.config.errorPath.toString());
+
+      if (AbstractSourceConnectorConfig.CleanupPolicy.MOVE == this.config.cleanupPolicy) {
+        checkPermission.checkIfDirectoryIsAccessible(AbstractSourceConnectorConfig.FINISHED_PATH_CONFIG, this.config.finishedPath.toString());
+      }
     }
 
     this.inputFileDequeue = new InputFileDequeue(this.config);
@@ -92,7 +96,7 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
     return VersionUtil.version(this.getClass());
   }
 
-  InputFileDequeue inputFileDequeue;
+  protected InputFileDequeue inputFileDequeue;
   int emptyCount = 0;
   long recordCount;
 
@@ -111,7 +115,7 @@ public abstract class AbstractSourceTask<CONF extends AbstractSourceConnectorCon
     }
     emptyCount = 0;
     log.trace("read() returning {} result(s)", results.size());
-
+    this.recordCount = this.recordsCount + results.size();
     return results;
   }
 

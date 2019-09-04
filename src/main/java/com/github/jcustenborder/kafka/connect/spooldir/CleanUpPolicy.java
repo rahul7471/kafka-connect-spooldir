@@ -35,13 +35,6 @@ class CleanUpPolicy implements FileCleanable {
     this.finishedPath = finishedPath;
   }
   
-  // TODO : check if this needed.
-  public CleanUpPolicy() {
-    this.inputFile = null;
-    this.errorPath = null;
-    this.finishedPath = null;
-  }
-  
   @Override
   public CleanUpPolicy create(AbstractSourceConnectorConfig config, 
       FileReadable inputReadableFile) throws IOException {
